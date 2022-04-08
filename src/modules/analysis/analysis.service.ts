@@ -14,7 +14,7 @@ export class AnalysisService {
   ) {}
 
   async getData(): Promise<void> {
-    this.logger.verbose('get data from the graph');
+    this.logger.debug('get data from the graph');
 
     const query =
       '{\n  factories(first: 5) {\n    id\n    poolCount\n    txCount\n    totalVolumeUSD\n  }\n  bundles(first: 5) {\n    id\n    ethPriceUSD\n  }\n}\n';
