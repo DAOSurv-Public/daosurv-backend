@@ -28,6 +28,6 @@ export class AnalysisService {
 
     console.log('response', response.data.data.factories[0].id);
 
-    // this.tweetService.tweet();
+    // this.tweetService.tweet('hello!');
   }
 }

@@ -27,4 +27,8 @@ export class TweetService {
       this.logger.error(`tweet : `, JSON.stringify(error));
     }
   }
+
+  async getFeed() {
+    return [1, 2, 3];
+  }
 }
