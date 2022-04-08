@@ -30,4 +30,6 @@ export class AnalysisService {
 
     // this.tweetService.tweet();
   }
+
+  async testTweet(): Promise<void> {}
 }

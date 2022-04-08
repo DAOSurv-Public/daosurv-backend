@@ -16,6 +16,7 @@ export class TasksService {
 
   @Timeout(100)
   async onceJob() {
-    this.logger.debug('inital task is running.');
+    this.logger.debug('initial task is running.');
+    this.analysisService.testTweet();
   }
 }
