@@ -1,10 +1,20 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { TweetModule } from './modules/tweet/tweet.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { ConfigModule } from '@nestjs/config';
+import { generalConfig } from './configs/general.config';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      ignoreEnvFile: false,
+      load: [generalConfig],
+      isGlobal: true,
+    }),
+    TweetModule,
+    TasksModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
