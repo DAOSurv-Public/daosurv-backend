@@ -16,7 +16,7 @@ export class TweetService {
   async tweet(msg: string): Promise<void> {
     try {
       await this.twitterClient.v1.tweet(msg);
-      this.logger.verbose(`tweet : ${msg}`);
+      this.logger.debug(`tweet : ${msg}`);
     } catch (error) {
       this.logger.error(`tweet : `, error);
     }
