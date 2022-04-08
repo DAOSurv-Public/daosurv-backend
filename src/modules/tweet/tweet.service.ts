@@ -1,17 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+import { TwitterApi } from 'twitter-api-v2';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TweetService {
   private readonly logger = new Logger(TweetService.name);
-  httpService = null;
+  twitterClient = null;
 
-  constructor() {
-    this.httpService = new HttpService();
+  constructor(private readonly configService: ConfigService) {
+    this.twitterClient = new TwitterApi(
+      this.configService.get<string>('twitterApiKey'),
+    );
   }
 
-  tweet(): void {
-    this.logger.verbose('tweet');
-    //call api tw tweet
+  async tweet(msg: string): Promise<void> {
+    try {
+      await this.twitterClient.v1.tweet(msg);
+      this.logger.verbose(`tweet : ${msg}`);
+    } catch (error) {
+      this.logger.error(`tweet : `, error);
+    }
   }
 }

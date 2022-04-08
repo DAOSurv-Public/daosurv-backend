@@ -10,6 +10,6 @@ export class AnalysisService {
   getData(): void {
     this.logger.verbose('get data from the graph');
 
-    this.tweetService.tweet();
+    // this.tweetService.tweet();
   }
 }
