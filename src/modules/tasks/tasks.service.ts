@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
+import { PROTOCOLS } from 'src/configs/address.protocols';
 import { AnalysisService } from '../analysis/analysis.service';
 import { CovalenthqService } from '../covalenthq/covalenthq.service';
 
@@ -15,13 +16,12 @@ export class TasksService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   handleCron() {
     //test
-    this.analysisService.getData();
+    this.analysisService.queryProposal("nounsdao");
+    this.analysisService.queryBalance("nounsdao");
   }
 
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
-    // const res = await this.covalenthqService.getSpotPrices('ETH');
-    // console.log(res.data.items[0].quote_rate);
   }
 }

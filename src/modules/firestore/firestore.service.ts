@@ -28,6 +28,6 @@ export class FireStoreService {
   async getData(collection: string, document: string): Promise<any> {
     const docRef = this.db.collection(collection).doc(document)
     const res = await docRef.get();
-    return res;
+    return res.data();
   }
 }
