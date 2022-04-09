@@ -7,10 +7,7 @@ import { CovalenthqService } from '../covalenthq/covalenthq.service';
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(
-    private readonly analysisService: AnalysisService,
-    private readonly covalenthqService: CovalenthqService,
-  ) {}
+  constructor(private readonly analysisService: AnalysisService) {}
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   handleCron() {
