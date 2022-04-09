@@ -3,6 +3,7 @@ import { TweetModule } from './modules/tweet/tweet.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { ConfigModule } from '@nestjs/config';
 import { generalConfig } from './configs/general.config';
+import { WidgetModule } from './modules/widget/widget.module';
 
 @Module({
   imports: [
@@ -11,8 +12,8 @@ import { generalConfig } from './configs/general.config';
       load: [generalConfig],
       isGlobal: true,
     }),
-    TweetModule,
     TasksModule,
+    WidgetModule,
   ],
   controllers: [],
   providers: [],
