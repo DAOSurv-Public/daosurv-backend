@@ -9,5 +9,10 @@ export const generalConfig = () => ({
     bearer_token: process.env.TWITTER_BEARER_TOKEN,
   },
   theGraphUrl: process.env.THE_GRAPH_URL,
+  firestore: {
+    project_id: process.env.FS_PROJECT_ID,
+    client_email: process.env.FS_CLIENT_EMAIL,
+    private_key: process.env.FS_PRIVATE_KEY,
+  },
   covalenthq_key: process.env.COVALENTHQ_KEY,
 });
