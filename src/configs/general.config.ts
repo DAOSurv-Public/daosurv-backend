@@ -14,4 +14,5 @@ export const generalConfig = () => ({
     client_email: process.env.FS_CLIENT_EMAIL,
     private_key: process.env.FS_PRIVATE_KEY,
   },
+  covalenthq_key: process.env.COVALENTHQ_KEY,
 });
