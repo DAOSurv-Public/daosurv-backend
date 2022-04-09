@@ -35,19 +35,50 @@ export class CovalenthqService {
     startingBlock?: number,
     endingBlock?: number,
   ) {
-    const url = `${this.covalenthqURL}v1/1/address/${address}/transfers_v2/`;
-    const response = await firstValueFrom(
-      this.httpService.get(url, {
-        params: {
-          'contract-address': contractAddress,
-          'page-number': pageNumber,
-          'page-size': pageSize,
-          'starting-block': startingBlock,
-          'ending-block': endingBlock,
-          key: this.configService.get('covalenthq_key'),
-        },
-      }),
-    );
-    return response.data;
+    try {
+      const url = `${this.covalenthqURL}v1/1/address/${address}/transfers_v2/`;
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          params: {
+            'contract-address': contractAddress,
+            'page-number': pageNumber,
+            'page-size': pageSize,
+            'starting-block': startingBlock,
+            'ending-block': endingBlock,
+            key: this.configService.get('covalenthq_key'),
+          },
+        }),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        'GetERC20TokenTransfersForAddress',
+        JSON.stringify(error),
+      );
+    }
+  }
+
+  async getSpotPrices(
+    tickers?: string,
+    pageNumber?: number,
+    pageSize?: number,
+  ) {
+    try {
+      const url = `${this.covalenthqURL}v1/pricing/tickers/`;
+
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          params: {
+            tickers,
+            'page-number': pageNumber,
+            'page-size': pageSize,
+            key: this.configService.get('covalenthq_key'),
+          },
+        }),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error('GetSpotPrices', JSON.stringify(error));
+    }
   }
 }
