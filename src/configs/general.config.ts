@@ -9,4 +9,5 @@ export const generalConfig = () => ({
     bearer_token: process.env.TWITTER_BEARER_TOKEN,
   },
   theGraphUrl: process.env.THE_GRAPH_URL,
+  covalenthq_key: process.env.COVALENTHQ_KEY,
 });
