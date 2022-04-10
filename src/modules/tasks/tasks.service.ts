@@ -25,5 +25,6 @@ export class TasksService {
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
+    // await this.analysisService.queryTransaction('aave');
   }
 }

@@ -33,14 +33,6 @@ export class AnalysisService {
     );
 
     response.data.data.proposals.forEach((msg) => {
-      // const msg = {
-      //   id: item.id,
-      //   governor: item.governor,
-      //   forVotes: item.forVotes,
-      //   againstVotes: item.againstVotes,
-      //   abstainVotes: item.abstainVotes,
-      //   executed: item.executed,
-      // }
       try {
         proposal_ids[msg.id]=msg
         if (!db_proposals[msg.id]) {
@@ -101,106 +93,112 @@ export class AnalysisService {
   }
 
   async queryTransaction(dao) {
-    const address = PROTOCOLS[dao].treasury;
-    const res = await this.covalenthqService.getTokenBalancesForAddress(
-      address,
-    );
-
-    const db_alerts = await this.fireStoreService.getData(dao, 'alerts');
-
-    const db_block_synced = await this.fireStoreService.getData(
-      dao,
-      'block_synced',
-    );
-
+    const addresses: string[] = PROTOCOLS[dao].treasury;
     const endingBlock = await this.covalenthqService.getBlockLatest();
 
-    if (!db_alerts) {
-      await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
-    }
-    if (!db_block_synced) {
-      await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
-    }
+    for (const address of addresses) {
+      console.log('address', address);
+      const res = await this.covalenthqService.getTokenBalancesForAddress(
+        address,
+      );
 
-    if (db_alerts && db_block_synced) {
-      this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
-      this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
+      const db_alerts = await this.fireStoreService.getData(dao, 'alerts');
 
-      for (const token of res.data.items) {
-        try {
-          const transfers =
-            await this.covalenthqService.getERC20TokenTransfersForAddress(
-              address,
-              token.contract_address,
-              endingBlock,
-              db_block_synced.block ? db_block_synced.block : undefined,
-            );
+      const db_block_synced = await this.fireStoreService.getData(
+        dao,
+        'block_synced',
+      );
 
-          for (const tx of transfers.data.items) {
-            for (const transfer of tx.transfers) {
-              const msg = {
-                from_address: transfer.from_address,
-                from_address_label: transfer.from_address_label,
-                to_address: transfer.to_address,
-                to_address_label: transfer.to_address_label,
-                tx_hash: transfer.tx_hash,
-                logo_url: transfer.logo_url,
-                transfer_type: transfer.transfer_type,
-                contract_decimals: transfer.contract_decimals,
-                contract_name: transfer.contract_name,
-                contract_ticker_symbol: transfer.contract_ticker_symbol,
-                contract_address: transfer.contract_address,
-                delta: transfer.delta,
-                quote_rate: transfer.quote_rate,
-              };
-              // this.logger.debug('msg obj', msg);
+      if (!db_alerts) {
+        await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
+      }
+      if (!db_block_synced) {
+        await this.fireStoreService.storeData(dao, 'block_synced', {
+          block: 0,
+        });
+      }
 
-              const value = formatFixed(
-                transfer.delta,
-                transfer.contract_decimals,
+      if (db_alerts && db_block_synced) {
+        this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
+        this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
+
+        for (const token of res.data.items) {
+          try {
+            const transfers =
+              await this.covalenthqService.getERC20TokenTransfersForAddress(
+                address,
+                token.contract_address,
+                endingBlock,
+                // db_block_synced.block ? db_block_synced.block : undefined,
               );
 
-              const price = transfer?.quote_rate
-                ? +value * parseFloat(transfer.quote_rate)
-                : 0;
-
-              if (price > 10000) {
-                //insert msg for interface
-                db_alerts.list.push(msg);
-                await this.fireStoreService.storeData(dao, 'alerts', db_alerts);
+            for (const tx of transfers.data.items) {
+              for (const transfer of tx.transfers) {
                 const isSender =
                   address.toLowerCase() == transfer.from_address.toLowerCase();
                 const isRecipient =
                   address.toLowerCase() == transfer.to_address.toLowerCase();
 
-                const from = isSender
-                  ? `#${dao} (${PROTOCOLS[dao].tw_url})`
-                  : transfer.from_address_label || transfer.from_address;
+                const value = formatFixed(
+                  transfer.delta,
+                  transfer.contract_decimals,
+                );
 
-                const to = isRecipient
-                  ? `#${dao} (${PROTOCOLS[dao].tw_url})`
-                  : transfer.to_address_label || transfer.to_address;
+                const price = transfer?.quote_rate
+                  ? +value * parseFloat(transfer.quote_rate)
+                  : 0;
 
-                const etherscan = `https://etherscan.io/tx/${transfer.tx_hash}`;
+                const msg = {
+                  to: transfer.to_address_label || transfer.to_address,
+                  from: transfer.from_address_label || transfer.from_address,
+                  etherscanLink: transfer.tx_hash,
+                  isSent: isSender,
+                  valueUSD: price,
+                  value: value,
+                  symbol: transfer.contract_ticker_symbol,
+                  symbolIcon: transfer.logo_url,
+                };
+                // this.logger.debug('msg obj', msg);
 
-                const tweet = `🚨🚨🚨🚨 ALERT 🚨🚨🚨🚨\n${value} #${transfer.contract_ticker_symbol
-                  } ${price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
+                if (price > 10000) {
+                  //insert msg for interface
+                  db_alerts.list.push(msg);
+                  // await this.fireStoreService.storeData(
+                  //   dao,
+                  //   'alerts',
+                  //   db_alerts,
+                  // );
+
+                  const from = isSender
+                    ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                    : transfer.from_address_label || transfer.from_address;
+
+                  const to = isRecipient
+                    ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                    : transfer.to_address_label || transfer.to_address;
+
+                  const etherscan = `https://etherscan.io/tx/${transfer.tx_hash}`;
+
+                  const tweet = `🚨🚨🚨🚨 ALERT 🚨🚨🚨🚨\n${value} #${
+                    transfer.contract_ticker_symbol
+                  } ${
+                    price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
                   } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
 
-                // this.logger.debug(tweet);
+                  this.logger.debug(tweet);
 
-                await this.tweetService.tweet(tweet);
-
-                await this.fireStoreService.storeData(dao, 'block_synced', {
-                  block: endingBlock,
-                });
+                  // await this.tweetService.tweet(tweet);
+                }
               }
             }
+          } catch (error) {
+            this.logger.error(JSON.stringify(error));
           }
-        } catch (error) {
-          this.logger.error(JSON.stringify(error));
         }
       }
     }
+    await this.fireStoreService.storeData(dao, 'block_synced', {
+      block: endingBlock,
+    });
   }
 }
