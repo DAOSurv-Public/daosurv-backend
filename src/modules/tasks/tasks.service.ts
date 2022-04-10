@@ -27,9 +27,9 @@ export class TasksService {
   async onceJob() {
     this.logger.debug('initial task is running.');
 
-    await this.analysisService.queryTransaction('nounsdao');
-    await this.analysisService.queryTransaction('aave');
+    // await this.analysisService.queryTransaction('aave');
     await this.analysisService.queryProposal('aave');
-
+    await this.analysisService.queryProposal('nounsdao');
+    // await this.analysisService.queryTransaction('nounsdao');
   }
 }
