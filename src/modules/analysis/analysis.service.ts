@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { CovalenthqService } from '../covalenthq/covalenthq.service';
 import { FireStoreService } from '../firestore/firestore.service';
 import { PROTOCOLS } from 'src/configs/address.protocols';
+import { BigNumber } from '@ethersproject/bignumber';
 @Injectable()
 export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);
@@ -68,6 +69,8 @@ export class AnalysisService {
           const diff_usd =
             (balance - old_balance) * parseFloat(item.quote_rate);
           const diff_percent = (balance - old_balance) / old_balance;
+
+          console.log('diff_usd', diff_usd);
           if (diff_percent >= percent_threshold) {
             const msg = `${(balance - old_balance) / denominator} #${
               item.contract_ticker_symbol
@@ -87,5 +90,49 @@ export class AnalysisService {
       }
     });
     this.fireStoreService.storeData(dao, 'balance', new_balance);
+  }
+
+  async queryTransaction(dao) {
+    const address = PROTOCOLS[dao].treasury;
+    const res = await this.covalenthqService.getTokenBalancesForAddress(
+      address,
+    );
+
+    const balance = {};
+
+    for (const token of res.data.items) {
+      try {
+        balance[token.contract_address] = token.balance;
+        const transfers =
+          await this.covalenthqService.getERC20TokenTransfersForAddress(
+            address,
+            token.contract_address,
+          );
+
+        for (const tx of transfers.data.items) {
+          for (const transfer of tx.transfers) {
+            const msg = {
+              from_address: transfer.from_address,
+              to_address: transfer.to_address,
+              tx_hash: transfer.tx_hash,
+              logo_url: transfer.logo_url,
+              transfer_type: transfer.transfer_type,
+              contract_decimals: transfer.contract_decimals,
+              contract_name: transfer.contract_name,
+              contract_ticker_symbol: transfer.contract_ticker_symbol,
+              contract_address: transfer.contract_address,
+              delta: transfer.delta,
+              quote_rate: transfer.quote_rate,
+            };
+
+            this.logger.debug('msg obj', msg);
+          }
+        }
+      } catch (error) {
+        this.logger.error(JSON.stringify(error));
+      }
+    }
+
+    console.log('balance', balance);
   }
 }
