@@ -10,4 +10,10 @@ export class WidgetController {
     const data = await this.widgetService.getAlerts(dao);
     return data;
   }
+
+  @Get('proposals/:dao')
+  async getProposals(@Param('dao') dao) {
+    const data = await this.widgetService.getProposals(dao);
+    return data;
+  }
 }

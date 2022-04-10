@@ -45,6 +45,7 @@ export class AnalysisService {
         this.logger.debug(e);
       }
     });
+
     this.fireStoreService.storeData(dao, 'proposal', proposal_ids);
   }
 
@@ -195,6 +196,5 @@ export class AnalysisService {
         }
       }
     }
-  }
   }
 }
