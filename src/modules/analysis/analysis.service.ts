@@ -72,7 +72,6 @@ export class AnalysisService {
             (balance - old_balance) * parseFloat(item.quote_rate);
           const diff_percent = (balance - old_balance) / old_balance;
 
-          console.log('diff_usd', diff_usd);
           if (diff_percent >= percent_threshold) {
             const msg = `${(balance - old_balance) / denominator} #${
               item.contract_ticker_symbol
@@ -100,101 +99,83 @@ export class AnalysisService {
       address,
     );
 
-    const balance = {};
+    const db_alerts = await this.fireStoreService.getData(dao, 'alerts');
 
-    const db_erc20_balance = await this.fireStoreService.getData(
+    const db_block_synced = await this.fireStoreService.getData(
       dao,
-      'erc20_balance',
+      'block_synced',
     );
 
-    const db_block_synced = 0;
-    const block = await this.covalenthqService.getBlockLatest();
-    console.log('block', block, db_block_synced);
-    console.log('db_erc20_balance', db_erc20_balance);
+    const endingBlock = await this.covalenthqService.getBlockLatest();
 
-    if (!db_erc20_balance) {
-      for (const token of res.data.items) {
-        balance[token.contract_address] = '0';
-      }
-      this.fireStoreService.storeData(dao, 'erc20_balance', balance);
+    this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
+    this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
+
+    if (!db_alerts) {
+      await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
+    }
+    if (!db_block_synced) {
+      await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
     } else {
       for (const token of res.data.items) {
         try {
-          balance[token.contract_address] = token.balance;
           const transfers =
             await this.covalenthqService.getERC20TokenTransfersForAddress(
               address,
               token.contract_address,
+              db_block_synced.block,
+              endingBlock,
             );
 
           for (const tx of transfers.data.items) {
             for (const transfer of tx.transfers) {
-              if (
-                BigNumber.from(db_erc20_balance[token.contract_address]).lt(
-                  BigNumber.from(transfer.delta),
-                )
-              ) {
-                const msg = {
-                  from_address: transfer.from_address,
-                  to_address: transfer.to_address,
-                  tx_hash: transfer.tx_hash,
-                  logo_url: transfer.logo_url,
-                  transfer_type: transfer.transfer_type,
-                  contract_decimals: transfer.contract_decimals,
-                  contract_name: transfer.contract_name,
-                  contract_ticker_symbol: transfer.contract_ticker_symbol,
-                  contract_address: transfer.contract_address,
-                  delta: transfer.delta,
-                  quote_rate: transfer.quote_rate,
-                };
+              const msg = {
+                from_address: transfer.from_address,
+                to_address: transfer.to_address,
+                tx_hash: transfer.tx_hash,
+                logo_url: transfer.logo_url,
+                transfer_type: transfer.transfer_type,
+                contract_decimals: transfer.contract_decimals,
+                contract_name: transfer.contract_name,
+                contract_ticker_symbol: transfer.contract_ticker_symbol,
+                contract_address: transfer.contract_address,
+                delta: transfer.delta,
+                quote_rate: transfer.quote_rate,
+              };
+              // this.logger.debug('msg obj', msg);
 
-                //insert msg for interface
-                // this.logger.debug('msg obj', msg);
+              //insert msg for interface
+              await this.fireStoreService.storeData(dao, 'alerts', {
+                list: [...db_alerts, msg],
+              });
 
-                let new_balance = db_erc20_balance[token.contract_address];
-                const value = formatFixed(
-                  transfer.delta,
-                  transfer.contract_decimals,
-                );
+              const value = formatFixed(
+                transfer.delta,
+                transfer.contract_decimals,
+              );
 
-                const price = transfer?.quote_rate
-                  ? +value * parseFloat(transfer.quote_rate)
-                  : 0;
+              const price = transfer?.quote_rate
+                ? +value * parseFloat(transfer.quote_rate)
+                : 0;
 
-                if (transfer.transfer_type == 'IN') {
-                  this.logger.warn(
-                    `${value} ${transfer.contract_ticker_symbol} ${
-                      price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
-                    } \nhas been transferred to #${dao}`,
-                  );
-                  new_balance = BigNumber.from(
-                    db_erc20_balance[token.contract_address],
-                  )
-                    .add(BigNumber.from(transfer.delta))
-                    .toString();
-                } else {
-                  //OUT
-                  this.logger.warn(
-                    `-${value} ${transfer.contract_ticker_symbol} ${
-                      price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
-                    } \nhas been transferred from #${dao}`,
-                  );
-                  new_balance = BigNumber.from(
-                    db_erc20_balance[token.contract_address],
-                  )
-                    .sub(BigNumber.from(transfer.delta))
-                    .toString();
-                }
-
-                // console.log('new_balance', new_balance);
-
-                // db_erc20_balance[token.contract_address] = new_balance;
-                // await this.fireStoreService.storeData(
-                //   dao,
-                //   'erc20_balance',
-                //   db_erc20_balance,
-                // );
+              if (transfer.transfer_type == 'IN') {
+                const msg = `${value} ${transfer.contract_ticker_symbol} ${
+                  price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
+                } \nhas been transferred to #${dao}`;
+                this.logger.warn(msg);
+                await this.tweetService.tweet(msg);
+              } else {
+                //OUT
+                const msg = `-${value} ${transfer.contract_ticker_symbol} ${
+                  price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
+                } \nhas been transferred from #${dao}`;
+                this.logger.warn(msg);
+                await this.tweetService.tweet(msg);
               }
+
+              await this.fireStoreService.storeData(dao, 'block_synced', {
+                block: endingBlock,
+              });
             }
           }
         } catch (error) {

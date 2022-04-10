@@ -30,10 +30,10 @@ export class CovalenthqService {
   async getERC20TokenTransfersForAddress(
     address: string,
     contractAddress: string,
-    pageNumber?: number,
-    pageSize?: number,
     startingBlock?: number,
     endingBlock?: number,
+    pageNumber?: number,
+    pageSize?: number,
   ) {
     try {
       const url = `${this.covalenthqURL}v1/1/address/${address}/transfers_v2/`;

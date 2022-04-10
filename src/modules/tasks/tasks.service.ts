@@ -18,11 +18,12 @@ export class TasksService {
     //test
     // this.analysisService.queryProposal('nounsdao');
     // this.analysisService.queryBalance('nounsdao');
-    this.analysisService.queryTransaction('nounsdao');
+    // this.analysisService.queryTransaction('nounsdao');
   }
 
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
+    this.analysisService.queryTransaction('nounsdao');
   }
 }
