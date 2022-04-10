@@ -94,9 +94,6 @@ export class AnalysisService {
   }
 
   async queryTransaction(dao) {
-    await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
-    await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
-
     const address = PROTOCOLS[dao].treasury;
     const res = await this.covalenthqService.getTokenBalancesForAddress(
       address,
@@ -178,24 +175,13 @@ export class AnalysisService {
 
               const etherscan = `https://etherscan.io/tx/${transfer.tx_hash}`;
 
-              // if (transfer.transfer_type == 'IN') {
               const tweet = `🚨🚨🚨🚨 ALERT 🚨🚨🚨🚨\n${value} #${
                 transfer.contract_ticker_symbol
               } ${
                 price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
               } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
 
-              this.logger.warn(tweet);
               await this.tweetService.tweet(tweet);
-              // } else {
-              //   //OUT
-
-              //   const msg = `-${value} ${transfer.contract_ticker_symbol} ${
-              //     price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
-              //   } \nhas been transferred from #${dao}`;
-              //   this.logger.warn(msg);
-              //   await this.tweetService.tweet(msg);
-              // }
 
               await this.fireStoreService.storeData(dao, 'block_synced', {
                 block: endingBlock,
