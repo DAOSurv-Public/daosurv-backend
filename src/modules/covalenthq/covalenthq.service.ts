@@ -81,4 +81,18 @@ export class CovalenthqService {
       this.logger.error('GetSpotPrices', JSON.stringify(error));
     }
   }
+
+  async getBlockLatest() {
+    const url = `${this.covalenthqURL}v1/1/block_v2/latest/`;
+
+    const response = await firstValueFrom(
+      this.httpService.get(url, {
+        params: {
+          key: this.configService.get('covalenthq_key'),
+        },
+      }),
+    );
+
+    return response.data.data.items[0].height;
+  }
 }

@@ -106,6 +106,10 @@ export class AnalysisService {
       dao,
       'erc20_balance',
     );
+
+    const db_block_synced = 0;
+    const block = await this.covalenthqService.getBlockLatest();
+    console.log('block', block, db_block_synced);
     console.log('db_erc20_balance', db_erc20_balance);
 
     if (!db_erc20_balance) {
