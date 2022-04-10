@@ -124,13 +124,16 @@ export class AnalysisService {
         this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
 
         for (const token of res.data.items) {
+          if (token.type == 'dust') {
+            continue;
+          }
           try {
             const transfers =
               await this.covalenthqService.getERC20TokenTransfersForAddress(
                 address,
-                token.contract_address,
+                PROTOCOLS[dao]?.token || token.contract_address,
                 endingBlock,
-                // db_block_synced.block ? db_block_synced.block : undefined,
+                db_block_synced.block ? db_block_synced.block : undefined,
               );
 
             for (const tx of transfers.data.items) {
@@ -150,8 +153,12 @@ export class AnalysisService {
                   : 0;
 
                 const msg = {
-                  to: transfer.to_address_label || transfer.to_address,
-                  from: transfer.from_address_label || transfer.from_address,
+                  to: isRecipient
+                    ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                    : transfer.to_address_label || transfer.to_address,
+                  from: isSender
+                    ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                    : transfer.from_address_label || transfer.from_address,
                   etherscanLink: transfer.tx_hash,
                   isSent: isSender,
                   valueUSD: price,
@@ -164,11 +171,11 @@ export class AnalysisService {
                 if (price > 10000) {
                   //insert msg for interface
                   db_alerts.list.push(msg);
-                  // await this.fireStoreService.storeData(
-                  //   dao,
-                  //   'alerts',
-                  //   db_alerts,
-                  // );
+                  await this.fireStoreService.storeData(
+                    dao,
+                    'alerts',
+                    db_alerts,
+                  );
 
                   const from = isSender
                     ? `#${dao} (${PROTOCOLS[dao].tw_url})`
@@ -187,8 +194,9 @@ export class AnalysisService {
                   } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
 
                   this.logger.debug(tweet);
+                  await this.sleep(1000);
 
-                  // await this.tweetService.tweet(tweet);
+                  await this.tweetService.tweet(tweet);
                 }
               }
             }
@@ -201,5 +209,8 @@ export class AnalysisService {
     await this.fireStoreService.storeData(dao, 'block_synced', {
       block: endingBlock,
     });
+  }
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

@@ -10,6 +10,7 @@ export const PROTOCOLS = {
       '0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c',
       '0x89C51828427F70D77875C6747759fB17Ba10Ceb0',
     ],
+    token: '0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9',
     tw_url: 'https://twitter.com/AaveAave',
   },
 };
