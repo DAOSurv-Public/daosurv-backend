@@ -6,7 +6,9 @@ import { firstValueFrom } from 'rxjs';
 import { CovalenthqService } from '../covalenthq/covalenthq.service';
 import { FireStoreService } from '../firestore/firestore.service';
 import { PROTOCOLS } from 'src/configs/address.protocols';
-import { BigNumber } from '@ethersproject/bignumber';
+import { BigNumber, formatFixed, parseFixed } from '@ethersproject/bignumber';
+import * as numeral from 'numeral';
+
 @Injectable()
 export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);
@@ -100,39 +102,101 @@ export class AnalysisService {
 
     const balance = {};
 
-    for (const token of res.data.items) {
-      try {
-        balance[token.contract_address] = token.balance;
-        const transfers =
-          await this.covalenthqService.getERC20TokenTransfersForAddress(
-            address,
-            token.contract_address,
-          );
+    const db_erc20_balance = await this.fireStoreService.getData(
+      dao,
+      'erc20_balance',
+    );
+    console.log('db_erc20_balance', db_erc20_balance);
 
-        for (const tx of transfers.data.items) {
-          for (const transfer of tx.transfers) {
-            const msg = {
-              from_address: transfer.from_address,
-              to_address: transfer.to_address,
-              tx_hash: transfer.tx_hash,
-              logo_url: transfer.logo_url,
-              transfer_type: transfer.transfer_type,
-              contract_decimals: transfer.contract_decimals,
-              contract_name: transfer.contract_name,
-              contract_ticker_symbol: transfer.contract_ticker_symbol,
-              contract_address: transfer.contract_address,
-              delta: transfer.delta,
-              quote_rate: transfer.quote_rate,
-            };
+    if (!db_erc20_balance) {
+      for (const token of res.data.items) {
+        balance[token.contract_address] = '0';
+      }
+      this.fireStoreService.storeData(dao, 'erc20_balance', balance);
+    } else {
+      for (const token of res.data.items) {
+        try {
+          balance[token.contract_address] = token.balance;
+          const transfers =
+            await this.covalenthqService.getERC20TokenTransfersForAddress(
+              address,
+              token.contract_address,
+            );
 
-            this.logger.debug('msg obj', msg);
+          for (const tx of transfers.data.items) {
+            for (const transfer of tx.transfers) {
+              if (
+                BigNumber.from(db_erc20_balance[token.contract_address]).lt(
+                  BigNumber.from(transfer.delta),
+                )
+              ) {
+                const msg = {
+                  from_address: transfer.from_address,
+                  to_address: transfer.to_address,
+                  tx_hash: transfer.tx_hash,
+                  logo_url: transfer.logo_url,
+                  transfer_type: transfer.transfer_type,
+                  contract_decimals: transfer.contract_decimals,
+                  contract_name: transfer.contract_name,
+                  contract_ticker_symbol: transfer.contract_ticker_symbol,
+                  contract_address: transfer.contract_address,
+                  delta: transfer.delta,
+                  quote_rate: transfer.quote_rate,
+                };
+
+                //insert msg for interface
+                // this.logger.debug('msg obj', msg);
+
+                let new_balance = db_erc20_balance[token.contract_address];
+                const value = formatFixed(
+                  transfer.delta,
+                  transfer.contract_decimals,
+                );
+
+                const price = transfer?.quote_rate
+                  ? +value * parseFloat(transfer.quote_rate)
+                  : 0;
+
+                if (transfer.transfer_type == 'IN') {
+                  this.logger.warn(
+                    `${value} ${transfer.contract_ticker_symbol} ${
+                      price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
+                    } \nhas been transferred to #${dao}`,
+                  );
+                  new_balance = BigNumber.from(
+                    db_erc20_balance[token.contract_address],
+                  )
+                    .add(BigNumber.from(transfer.delta))
+                    .toString();
+                } else {
+                  //OUT
+                  this.logger.warn(
+                    `-${value} ${transfer.contract_ticker_symbol} ${
+                      price ? '(' + numeral(price).format('$0,0.00') + ')' : ''
+                    } \nhas been transferred from #${dao}`,
+                  );
+                  new_balance = BigNumber.from(
+                    db_erc20_balance[token.contract_address],
+                  )
+                    .sub(BigNumber.from(transfer.delta))
+                    .toString();
+                }
+
+                // console.log('new_balance', new_balance);
+
+                // db_erc20_balance[token.contract_address] = new_balance;
+                // await this.fireStoreService.storeData(
+                //   dao,
+                //   'erc20_balance',
+                //   db_erc20_balance,
+                // );
+              }
+            }
           }
+        } catch (error) {
+          this.logger.error(JSON.stringify(error));
         }
-      } catch (error) {
-        this.logger.error(JSON.stringify(error));
       }
     }
-
-    console.log('balance', balance);
   }
 }
