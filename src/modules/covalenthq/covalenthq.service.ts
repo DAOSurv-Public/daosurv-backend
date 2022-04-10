@@ -30,8 +30,8 @@ export class CovalenthqService {
   async getERC20TokenTransfersForAddress(
     address: string,
     contractAddress: string,
-    startingBlock?: number,
     endingBlock?: number,
+    startingBlock?: number,
     pageNumber?: number,
     pageSize?: number,
   ) {
