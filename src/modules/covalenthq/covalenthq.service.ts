@@ -30,10 +30,10 @@ export class CovalenthqService {
   async getERC20TokenTransfersForAddress(
     address: string,
     contractAddress: string,
+    endingBlock?: number,
+    startingBlock?: number,
     pageNumber?: number,
     pageSize?: number,
-    startingBlock?: number,
-    endingBlock?: number,
   ) {
     try {
       const url = `${this.covalenthqURL}v1/1/address/${address}/transfers_v2/`;
@@ -80,5 +80,19 @@ export class CovalenthqService {
     } catch (error) {
       this.logger.error('GetSpotPrices', JSON.stringify(error));
     }
+  }
+
+  async getBlockLatest() {
+    const url = `${this.covalenthqURL}v1/1/block_v2/latest/`;
+
+    const response = await firstValueFrom(
+      this.httpService.get(url, {
+        params: {
+          key: this.configService.get('covalenthq_key'),
+        },
+      }),
+    );
+
+    return response.data.data.items[0].height;
   }
 }
