@@ -13,12 +13,12 @@ export class TasksService {
     private readonly covalenthqService: CovalenthqService,
   ) {}
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
-  handleCron() {
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
     //test
     // this.analysisService.queryProposal('nounsdao');
     // this.analysisService.queryBalance('nounsdao');
-    this.analysisService.queryTransaction('nounsdao');
+    await this.analysisService.queryTransaction('nounsdao');
   }
 
   @Timeout(100)

@@ -94,10 +94,6 @@ export class AnalysisService {
   }
 
   async queryTransaction(dao) {
-    await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
-
-    await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
-
     const address = PROTOCOLS[dao].treasury;
     const res = await this.covalenthqService.getTokenBalancesForAddress(
       address,
@@ -112,16 +108,17 @@ export class AnalysisService {
 
     const endingBlock = await this.covalenthqService.getBlockLatest();
 
-    this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
-    this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
-    return;
-
     if (!db_alerts) {
       await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
     }
     if (!db_block_synced) {
       await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
-    } else {
+    }
+
+    if (db_alerts && db_block_synced) {
+      this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
+      this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
+
       for (const token of res.data.items) {
         try {
           const transfers =
@@ -189,11 +186,11 @@ export class AnalysisService {
 
                 this.logger.warn(tweet);
 
-                // await this.tweetService.tweet(tweet);
+                await this.tweetService.tweet(tweet);
 
-                // await this.fireStoreService.storeData(dao, 'block_synced', {
-                //   block: endingBlock,
-                // });
+                await this.fireStoreService.storeData(dao, 'block_synced', {
+                  block: endingBlock,
+                });
               }
             }
           }
