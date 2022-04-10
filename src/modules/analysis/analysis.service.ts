@@ -107,6 +107,12 @@ export class AnalysisService {
     this.fireStoreService.storeData(dao, 'balance', new_balance);
   }
 
+  async clear(dao) {
+    await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
+    await this.fireStoreService.storeData(dao, 'block_synced', {
+      block: 0,
+    });
+  }
   async queryTransaction(dao) {
     const addresses: string[] = PROTOCOLS[dao].treasury;
     const endingBlock = await this.covalenthqService.getBlockLatest();

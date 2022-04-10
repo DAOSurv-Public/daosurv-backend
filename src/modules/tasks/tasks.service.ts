@@ -3,6 +3,7 @@ import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 import { PROTOCOLS } from 'src/configs/address.protocols';
 import { AnalysisService } from '../analysis/analysis.service';
 import { CovalenthqService } from '../covalenthq/covalenthq.service';
+import { TweetService } from '../tweet/tweet.service';
 
 @Injectable()
 export class TasksService {
@@ -11,13 +12,12 @@ export class TasksService {
   constructor(
     private readonly analysisService: AnalysisService,
     private readonly covalenthqService: CovalenthqService,
+    private readonly tweetService: TweetService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_12_HOURS)
   async handleCron() {
     //test
-    // this.analysisService.queryProposal('nounsdao');
-    // this.analysisService.queryBalance('nounsdao');
     // await this.analysisService.queryTransaction('nounsdao');
     // await this.analysisService.queryTransaction('aave');
     // await this.analysisService.queryProposal('aave');
@@ -26,6 +26,10 @@ export class TasksService {
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
-    // this.analysisService.queryProposal('aave');
+
+    await this.analysisService.queryTransaction('nounsdao');
+    await this.analysisService.queryTransaction('aave');
+    await this.analysisService.queryProposal('aave');
+
   }
 }
