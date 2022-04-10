@@ -26,10 +26,10 @@ export class TasksService {
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
-    await this.analysisService.clear('nounsdao');
-    await this.analysisService.clear('aave');
+
     await this.analysisService.queryTransaction('nounsdao');
     await this.analysisService.queryTransaction('aave');
     await this.analysisService.queryProposal('aave');
+
   }
 }
