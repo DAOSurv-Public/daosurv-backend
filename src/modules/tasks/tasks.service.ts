@@ -18,7 +18,7 @@ export class TasksService {
     //test
     // this.analysisService.queryProposal('nounsdao');
     // this.analysisService.queryBalance('nounsdao');
-    await this.analysisService.queryTransaction('nounsdao');
+    // await this.analysisService.queryTransaction('nounsdao');
   }
 
   @Timeout(100)

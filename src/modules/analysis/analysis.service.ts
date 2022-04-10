@@ -148,11 +148,6 @@ export class AnalysisService {
               };
               // this.logger.debug('msg obj', msg);
 
-              //insert msg for interface
-              await this.fireStoreService.storeData(dao, 'alerts', {
-                list: [...db_alerts.list, msg],
-              });
-
               const value = formatFixed(
                 transfer.delta,
                 transfer.contract_decimals,
@@ -163,6 +158,9 @@ export class AnalysisService {
                 : 0;
 
               if (price > 10000) {
+                //insert msg for interface
+                db_alerts.list.push(msg);
+                await this.fireStoreService.storeData(dao, 'alerts', db_alerts);
                 const isSender =
                   address.toLowerCase() == transfer.from_address.toLowerCase();
                 const isRecipient =
@@ -184,7 +182,7 @@ export class AnalysisService {
                   price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
                 } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
 
-                this.logger.warn(tweet);
+                // this.logger.debug(tweet);
 
                 await this.tweetService.tweet(tweet);
 
