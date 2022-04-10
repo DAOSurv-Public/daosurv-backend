@@ -34,10 +34,11 @@ export class AnalysisService {
 
     response.data.data.proposals.forEach((msg) => {
       try {
+        const id = msg.id.replace(/^\D+/g, '');
+        const link = `${PROTOCOLS[dao].vote_url}${id}`;
+        msg['link'] = link;
         proposal_ids[msg.id] = msg;
         if (!db_proposals[msg.id]) {
-          const id = msg.id.replace(/^\D+/g, '');
-          const link = `${PROTOCOLS[dao].vote_url}${id}`;
           const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id}] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`;
           this.tweetService.tweet(tweet);
         }
