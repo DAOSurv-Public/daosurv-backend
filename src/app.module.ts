@@ -4,6 +4,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { ConfigModule } from '@nestjs/config';
 import { generalConfig } from './configs/general.config';
 import { WidgetModule } from './modules/widget/widget.module';
+import { SubgraphModule } from './modules/subgraph/subgraph.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WidgetModule } from './modules/widget/widget.module';
     }),
     TasksModule,
     WidgetModule,
+    SubgraphModule,
   ],
   controllers: [],
   providers: [],
