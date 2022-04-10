@@ -30,5 +30,6 @@ export class TasksService {
     await this.analysisService.clear('aave');
     await this.analysisService.queryTransaction('nounsdao');
     await this.analysisService.queryTransaction('aave');
+    await this.analysisService.queryProposal('aave');
   }
 }
