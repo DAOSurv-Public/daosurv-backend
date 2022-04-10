@@ -55,20 +55,13 @@ export class AnalysisService {
           description: msg.description,
           proposalLink: msg.link,
         };
-        this.fireStoreService.storeData(dao, 'proposal', {
-          ...proposal_ids,
-          [msg.id]: {
-            proposalId: msg.proposalId,
-            description: msg.description,
-            proposalLink: msg.link,
-          },
-        });
 
-        proposal_ids[msg.id] = msg;
         if (!db_proposals[msg.id]) {
           const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id}] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`;
           this.tweetService.tweet(tweet);
         }
+
+        this.fireStoreService.storeData(dao, 'proposal', proposal_ids);
       } catch (error) {
         this.logger.debug(error);
       }
