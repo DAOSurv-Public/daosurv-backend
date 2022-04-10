@@ -44,9 +44,9 @@ export class AnalysisService {
             await this.httpService.get(ipfsLink),
           );
           if (ipfsValue.data.preview) {
-            msg['preview'] = ipfsValue.data['preview'];
+            msg['description'] = ipfsValue.data['preview'];
           } else if (ipfsValue.data.shortDescription) {
-            msg['preview'] = ipfsValue.data['shortDescription'];
+            msg['description'] = ipfsValue.data['shortDescription'];
           }
         }
 
