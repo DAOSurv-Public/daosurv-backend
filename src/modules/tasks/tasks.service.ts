@@ -16,8 +16,8 @@ export class TasksService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   handleCron() {
     //test
-    this.analysisService.queryProposal("nounsdao");
-    this.analysisService.queryBalance("nounsdao");
+    // this.analysisService.queryProposal('nounsdao');
+    this.analysisService.queryBalance('nounsdao');
   }
 
   @Timeout(100)
