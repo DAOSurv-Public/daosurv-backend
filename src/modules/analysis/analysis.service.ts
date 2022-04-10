@@ -18,7 +18,7 @@ export class AnalysisService {
     private readonly httpService: HttpService,
     private readonly covalenthqService: CovalenthqService,
     private readonly fireStoreService: FireStoreService,
-  ) { }
+  ) {}
 
   async queryProposal(dao): Promise<void> {
     const address: string = PROTOCOLS[dao].proposal;
@@ -32,21 +32,33 @@ export class AnalysisService {
       }),
     );
 
-    response.data.data.proposals.forEach((msg) => {
+    for (const msg of response.data.data.proposals) {
       try {
-        const id =msg.id.replace( /^\D+/g, '')
-        const link = `${PROTOCOLS[dao].vote_url}${id}`
-        msg['link']=link
-        proposal_ids[msg.id]=msg
+        const id = msg.id.replace(/^\D+/g, '');
+        const link = `${PROTOCOLS[dao].vote_url}${id}`;
+        msg['link'] = link;
+
+        if (msg['ipfsHash']) {
+          const ipfsLink = 'https://ipfs.io/ipfs/' + msg['ipfsHash'];
+          const ipfsValue = await firstValueFrom(
+            await this.httpService.get(ipfsLink),
+          );
+          if (ipfsValue.data.preview) {
+            msg['preview'] = ipfsValue.data['preview'];
+          } else if (ipfsValue.data.shortDescription) {
+            msg['preview'] = ipfsValue.data['shortDescription'];
+          }
+        }
+
+        proposal_ids[msg.id] = msg;
         if (!db_proposals[msg.id]) {
-          const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id
-          }] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`
+          const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id}] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`;
           this.tweetService.tweet(tweet);
         }
       } catch (error) {
-        this.logger.debug(error)
+        this.logger.debug(error);
       }
-    });
+    }
     this.fireStoreService.storeData(dao, 'proposal', proposal_ids);
   }
 
@@ -75,13 +87,15 @@ export class AnalysisService {
           const diff_percent = (balance - old_balance) / old_balance;
 
           if (diff_percent >= percent_threshold) {
-            const msg = `${(balance - old_balance) / denominator} #${item.contract_ticker_symbol
-              } (${diff_usd} USD)\n has been transferred to #${dao}`;
+            const msg = `${(balance - old_balance) / denominator} #${
+              item.contract_ticker_symbol
+            } (${diff_usd} USD)\n has been transferred to #${dao}`;
             this.logger.debug(msg);
             // this.tweetService.tweet(msg)
           } else if (diff_percent < -percent_threshold) {
-            const msg = `${(old_balance - balance) / denominator} #${item.contract_ticker_symbol
-              } (${-diff_usd} USD)\n has been transferred to #${dao}`;
+            const msg = `${(old_balance - balance) / denominator} #${
+              item.contract_ticker_symbol
+            } (${-diff_usd} USD)\n has been transferred to #${dao}`;
             this.logger.debug(msg);
             // this.tweetService.tweet(msg)
           }
