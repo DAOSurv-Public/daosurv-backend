@@ -19,4 +19,16 @@ export class WidgetService {
     const db_alerts = await this.fireStoreService.getData(dao, 'alerts');
     return db_alerts;
   }
+  async getProposals(dao: string) {
+    const db_proposals = await this.fireStoreService.getData(dao, 'proposal');
+    return db_proposals;
+  }
+  async getData(dao: string) {
+    const db_proposals = await this.fireStoreService.getData(dao, 'proposal');
+    const db_alerts = await this.fireStoreService.getData(dao, 'alerts');
+    return {
+      alerts: db_alerts,
+      db_proposals: db_proposals,
+    };
+  }
 }

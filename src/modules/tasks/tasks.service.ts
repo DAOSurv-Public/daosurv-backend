@@ -20,6 +20,7 @@ export class TasksService {
     // this.analysisService.queryBalance('nounsdao');
     // await this.analysisService.queryTransaction('nounsdao');
     // await this.analysisService.queryTransaction('aave');
+    // await this.analysisService.queryProposal('aave');
   }
 
   @Timeout(100)
