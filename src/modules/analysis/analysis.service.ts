@@ -94,6 +94,10 @@ export class AnalysisService {
   }
 
   async queryTransaction(dao) {
+    await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
+
+    await this.fireStoreService.storeData(dao, 'block_synced', { block: 0 });
+
     const address = PROTOCOLS[dao].treasury;
     const res = await this.covalenthqService.getTokenBalancesForAddress(
       address,
@@ -110,6 +114,7 @@ export class AnalysisService {
 
     this.logger.debug(`BLOCK -  synced : ${db_block_synced.block}`);
     this.logger.debug(`BLOCK -  Latest : ${endingBlock}`);
+    return;
 
     if (!db_alerts) {
       await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
@@ -160,32 +165,36 @@ export class AnalysisService {
                 ? +value * parseFloat(transfer.quote_rate)
                 : 0;
 
-              const isSender =
-                address.toLowerCase() == transfer.from_address.toLowerCase();
-              const isRecipient =
-                address.toLowerCase() == transfer.to_address.toLowerCase();
+              if (price > 10000) {
+                const isSender =
+                  address.toLowerCase() == transfer.from_address.toLowerCase();
+                const isRecipient =
+                  address.toLowerCase() == transfer.to_address.toLowerCase();
 
-              const from = isSender
-                ? `#${dao} (${PROTOCOLS[dao].tw_url})`
-                : transfer.from_address_label || transfer.from_address;
+                const from = isSender
+                  ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                  : transfer.from_address_label || transfer.from_address;
 
-              const to = isRecipient
-                ? `#${dao} (${PROTOCOLS[dao].tw_url})`
-                : transfer.to_address_label || transfer.to_address;
+                const to = isRecipient
+                  ? `#${dao} (${PROTOCOLS[dao].tw_url})`
+                  : transfer.to_address_label || transfer.to_address;
 
-              const etherscan = `https://etherscan.io/tx/${transfer.tx_hash}`;
+                const etherscan = `https://etherscan.io/tx/${transfer.tx_hash}`;
 
-              const tweet = `🚨🚨🚨🚨 ALERT 🚨🚨🚨🚨\n${value} #${
-                transfer.contract_ticker_symbol
-              } ${
-                price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
-              } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
+                const tweet = `🚨🚨🚨🚨 ALERT 🚨🚨🚨🚨\n${value} #${
+                  transfer.contract_ticker_symbol
+                } ${
+                  price ? '(' + numeral(price).format('0,0.00') + ' USD)' : ''
+                } \ntransferred from ${from} \nto ${to}\n[${etherscan}]`;
 
-              await this.tweetService.tweet(tweet);
+                this.logger.warn(tweet);
 
-              await this.fireStoreService.storeData(dao, 'block_synced', {
-                block: endingBlock,
-              });
+                // await this.tweetService.tweet(tweet);
+
+                // await this.fireStoreService.storeData(dao, 'block_synced', {
+                //   block: endingBlock,
+                // });
+              }
             }
           }
         } catch (error) {
