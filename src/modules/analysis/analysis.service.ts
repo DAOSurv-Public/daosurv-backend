@@ -131,22 +131,10 @@ export class AnalysisService {
 
           for (const tx of transfers.data.items) {
             for (const transfer of tx.transfers) {
-              const msg = {
-                from_address: transfer.from_address,
-                from_address_label: transfer.from_address_label,
-                to_address: transfer.to_address,
-                to_address_label: transfer.to_address_label,
-                tx_hash: transfer.tx_hash,
-                logo_url: transfer.logo_url,
-                transfer_type: transfer.transfer_type,
-                contract_decimals: transfer.contract_decimals,
-                contract_name: transfer.contract_name,
-                contract_ticker_symbol: transfer.contract_ticker_symbol,
-                contract_address: transfer.contract_address,
-                delta: transfer.delta,
-                quote_rate: transfer.quote_rate,
-              };
-              // this.logger.debug('msg obj', msg);
+              const isSender =
+                address.toLowerCase() == transfer.from_address.toLowerCase();
+              const isRecipient =
+                address.toLowerCase() == transfer.to_address.toLowerCase();
 
               const value = formatFixed(
                 transfer.delta,
@@ -157,14 +145,22 @@ export class AnalysisService {
                 ? +value * parseFloat(transfer.quote_rate)
                 : 0;
 
+              const msg = {
+                to: transfer.to_address_label || transfer.to_address,
+                from: transfer.from_address_label || transfer.from_address,
+                etherscanLink: transfer.tx_hash,
+                isSent: isSender,
+                valueUSD: price,
+                value: value,
+                symbol: transfer.contract_ticker_symbol,
+                symbolIcon: transfer.logo_url,
+              };
+              // this.logger.debug('msg obj', msg);
+
               if (price > 10000) {
                 //insert msg for interface
                 db_alerts.list.push(msg);
                 await this.fireStoreService.storeData(dao, 'alerts', db_alerts);
-                const isSender =
-                  address.toLowerCase() == transfer.from_address.toLowerCase();
-                const isRecipient =
-                  address.toLowerCase() == transfer.to_address.toLowerCase();
 
                 const from = isSender
                   ? `#${dao} (${PROTOCOLS[dao].tw_url})`
