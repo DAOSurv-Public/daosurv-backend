@@ -18,7 +18,7 @@ export class AnalysisService {
     private readonly httpService: HttpService,
     private readonly covalenthqService: CovalenthqService,
     private readonly fireStoreService: FireStoreService,
-  ) { }
+  ) {}
 
   async queryProposal(dao): Promise<void> {
     const address: string = PROTOCOLS[dao].proposal;
@@ -34,16 +34,15 @@ export class AnalysisService {
 
     response.data.data.proposals.forEach((msg) => {
       try {
-        proposal_ids[msg.id]=msg
+        proposal_ids[msg.id] = msg;
         if (!db_proposals[msg.id]) {
-          const id =msg.id.replace( /^\D+/g, '')
-          const link = `${PROTOCOLS[dao].vote_url}${id}`
-          const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id
-          }] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`
+          const id = msg.id.replace(/^\D+/g, '');
+          const link = `${PROTOCOLS[dao].vote_url}${id}`;
+          const tweet = `📢📢📢📢 PROPOSAL📢📢📢📢\n[${dao} ${id}] has been proposed!\n [${link}]\n What do you think, vote now!\n [👍 yes]\n [👎 nah]`;
           this.tweetService.tweet(tweet);
         }
       } catch (error) {
-        this.logger.debug(error)
+        this.logger.debug(error);
       }
     });
     this.fireStoreService.storeData(dao, 'proposal', proposal_ids);
@@ -74,13 +73,15 @@ export class AnalysisService {
           const diff_percent = (balance - old_balance) / old_balance;
 
           if (diff_percent >= percent_threshold) {
-            const msg = `${(balance - old_balance) / denominator} #${item.contract_ticker_symbol
-              } (${diff_usd} USD)\n has been transferred to #${dao}`;
+            const msg = `${(balance - old_balance) / denominator} #${
+              item.contract_ticker_symbol
+            } (${diff_usd} USD)\n has been transferred to #${dao}`;
             this.logger.debug(msg);
             // this.tweetService.tweet(msg)
           } else if (diff_percent < -percent_threshold) {
-            const msg = `${(old_balance - balance) / denominator} #${item.contract_ticker_symbol
-              } (${-diff_usd} USD)\n has been transferred to #${dao}`;
+            const msg = `${(old_balance - balance) / denominator} #${
+              item.contract_ticker_symbol
+            } (${-diff_usd} USD)\n has been transferred to #${dao}`;
             this.logger.debug(msg);
             // this.tweetService.tweet(msg)
           }
@@ -92,6 +93,12 @@ export class AnalysisService {
     this.fireStoreService.storeData(dao, 'balance', new_balance);
   }
 
+  async clear(dao) {
+    await this.fireStoreService.storeData(dao, 'alerts', { list: [] });
+    await this.fireStoreService.storeData(dao, 'block_synced', {
+      block: 0,
+    });
+  }
   async queryTransaction(dao) {
     const addresses: string[] = PROTOCOLS[dao].treasury;
     const endingBlock = await this.covalenthqService.getBlockLatest();

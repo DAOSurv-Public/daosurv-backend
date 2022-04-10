@@ -13,18 +13,18 @@ export class TasksService {
     private readonly covalenthqService: CovalenthqService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
     //test
-    // this.analysisService.queryProposal('nounsdao');
-    // this.analysisService.queryBalance('nounsdao');
-    // await this.analysisService.queryTransaction('nounsdao');
-    // await this.analysisService.queryTransaction('aave');
+    await this.analysisService.queryTransaction('nounsdao');
+    await this.analysisService.queryTransaction('aave');
     // await this.analysisService.queryProposal('aave');
   }
 
   @Timeout(100)
   async onceJob() {
     this.logger.debug('initial task is running.');
+    await this.analysisService.clear('nounsdao');
+    await this.analysisService.clear('aave');
   }
 }
